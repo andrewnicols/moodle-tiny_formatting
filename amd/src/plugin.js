@@ -21,11 +21,14 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+import {
+    addToolbarButtons,
+    addToolbarSection,
+} from 'editor_tiny/utils';
 import {pluginName} from './common';
 
 // Setup the tiny_formatting Plugin.
 const configureMenu = (menu) => {
-    window.console.log(`Starting menu management for ${menu.format.items}`);
     if (menu.format.items.match(/\bblocks\b/)) {
         menu.format.items = menu.format.items.replace(
             /(\bblocks\b)/,
@@ -43,15 +46,37 @@ const configureMenu = (menu) => {
     } else {
         menu.format.items = `${menu.format.items} | forecolor backcolor`;
     }
-    window.console.log(`Finished menu management for ${menu.format.items}`);
+
     return menu;
+};
+
+const configureToolbar = (toolbar) => {
+    // Insert fontfamily, font size, forecolor, backcolor at the start of the bottom row.
+    toolbar = addToolbarSection(toolbar, 'font', 'alignment', false);
+    toolbar = addToolbarButtons(toolbar, 'font', ['fontfamily', 'fontsize', 'forecolor', 'backcolor']);
+
+    // Remove LTR / LTR buttons located in the directionality section.
+    toolbar = toolbar.filter((section) => section.name !== 'directionality');
+
+    return toolbar;
 };
 
 // eslint-disable-next-line no-async-promise-executor
 export default new Promise(async (resolve) => {
-    resolve([pluginName, {
+    resolve([`${pluginName}/plugin`, {
         configure: (instanceConfig) => ({
             menu: configureMenu(instanceConfig.menu),
+            toolbar: configureToolbar(instanceConfig.toolbar),
+
+            // Remove the blockquote.
+            // https://www.tiny.cloud/docs/tinymce/latest/quickbars/#quickbars_selection_toolbar
+            // eslint-disable-next-line camelcase
+            quickbars_selection_toolbar: instanceConfig.quickbars_selection_toolbar.replace('blockquote', ''),
+
+            // Enable browser-supported spell checking.
+            // https://www.tiny.cloud/docs/tinymce/latest/spelling/
+            // eslint-disable-next-line camelcase
+            browser_spellcheck: true,
         }),
     }]);
 });
